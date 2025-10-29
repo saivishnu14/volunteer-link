@@ -3,7 +3,7 @@ version: 0.2
 env:
   variables:
     AWS_REGION: "ap-south-1"          # ✅ Change to your region
-    IMAGE_REPO_NAME: "volunteerlink-repo"         # ✅ ECR repo name (must already exist)
+    IMAGE_REPO_NAME: "vlink-repo"         # ✅ ECR repo name (must already exist)
     CONTAINER_NAME: "vlink-container"          # ✅ Must match ECS task definition
   shell: bash
 
