@@ -1,0 +1,36 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_REGION: "ap-southeast-2"          # ✅ Change to your region
+    IMAGE_REPO_NAME: "volunteerlink-repo"         # ✅ ECR repo name (must already exist)
+    CONTAINER_NAME: "vlink-container"          # ✅ Must match ECS task definition
+  shell: bash
+
+phases:
+  pre_build:
+    commands:
+      - echo "🔹 Logging in to Amazon ECR..."
+      - aws --version
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - REPOSITORY_URI=${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+
+  build:
+    commands:
+      - echo "🏗️ Building the Docker image..."
+      - docker build -t $IMAGE_REPO_NAME .
+      - docker tag $IMAGE_REPO_NAME:latest $REPOSITORY_URI:latest
+
+  post_build:
+    commands:
+      - echo "🚀 Pushing the Docker image to Amazon ECR..."
+      - docker push $REPOSITORY_URI:latest
+
+      - echo "🧩 Creating imagedefinitions.json for CodePipeline ECS deployment..."
+      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPOSITORY_URI:latest > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
+
